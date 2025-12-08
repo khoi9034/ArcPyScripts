@@ -5,10 +5,10 @@ This repository contains my ArcPy scripts and GIS automation projects. I learned
 ⚠️ Work in Progress  
 Many scripts are still being updated and uploaded; I will continue adding more after my exams.
 
-## Projects
-- Anime Retail Store Spatial Analysis (current)
-- Upcoming: Long-Term Care Facility Accessibility Analysis
-- Upcoming: Other raster/vector processing scripts
+## SCRIPTS
+- Anime Retail Store Spatial Analysis(finished)
+- Long-Term Care Facility Accessibility Analysis(finalizing)
+- raster/vector processing scripts(upcoming)
 
 This repository focuses on:
 - Geoprocessing automation using ArcPy
