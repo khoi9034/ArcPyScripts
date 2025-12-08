@@ -24,21 +24,36 @@ print("\n[STEP 1] Setting up project configuration...")
 arcpy.env.overwriteOutput = True
 
 # --- DYNAMIC PROJECT DISCOVERY (Set your single base path here) ---
-# This is the path containing all your city folders (Tokyo, Osaka, etc.)
-BASE_PROJECT_DIR = r"C:\ArcPyProjects\AutomatedAnimeStoreProximityByCity" 
+BASE_PROJECT_DIR = r"C:\ArcPyProjects\AutomatedAnimeStoreProximityByCity"
 
-# Automatically find all subdirectories (city folders) in the base path to process
-if os.path.exists(BASE_PROJECT_DIR):
-    project_names = [d for d in os.listdir(BASE_PROJECT_DIR) 
-                     if os.path.isdir(os.path.join(BASE_PROJECT_DIR, d))]
-    PROJECT_FOLDERS_TO_PROCESS = [os.path.join(BASE_PROJECT_DIR, name) 
-                                  for name in project_names]
-else:
-    PROJECT_FOLDERS_TO_PROCESS = []
+if not os.path.exists(BASE_PROJECT_DIR):
     print(f"❌ ERROR: Base project directory not found: {BASE_PROJECT_DIR}")
-    sys.exit(1) # Stop the script if the main data folder is missing
+    sys.exit(1)  # Stop if the folder doesn't exist
 
-print(f"Projects queued: {[os.path.basename(p) for p in PROJECT_FOLDERS_TO_PROCESS]}")
+# --- USER CONFIGURATION: Choose which cities to process ---
+# Options:
+# "all"      --> process all subfolders (all cities)
+# ["Tokyo"]  --> process only Tokyo
+# ["Tokyo", "Nagoya"] --> process multiple specific cities
+PROCESS_CITIES = ["Tokyo"]
+
+# --- Automatically find all city subdirectories ---
+all_project_names = [d for d in os.listdir(BASE_PROJECT_DIR)
+                    if os.path.isdir(os.path.join(BASE_PROJECT_DIR, d))]
+
+if PROCESS_CITIES == "all":
+    selected_projects = all_project_names
+elif isinstance(PROCESS_CITIES, list):
+    # Only include folders that exist
+    selected_projects = [c for c in PROCESS_CITIES if c in all_project_names]
+else:
+    print("❌ Invalid value for PROCESS_CITIES. Must be 'all' or a list of city names.")
+    sys.exit(1)
+
+# Build full paths
+PROJECT_FOLDERS_TO_PROCESS = [os.path.join(BASE_PROJECT_DIR, name) for name in selected_projects]
+
+print(f"Projects queued: {selected_projects}")
 
 # Define Target CRS: JGD2011 / UTM Zone 54N (WKID 6697)
 TARGET_SR = arcpy.SpatialReference(6697)
