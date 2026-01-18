@@ -5,17 +5,14 @@ from arcpy.sa import *
 # =========================================================================
 # USER CONFIGURATION: PLUG YOUR PATHS HERE
 # =========================================================================
-# Folder containing your raw .tif tiles (e.g., SRTM tiles)
 input_folder = r"C:\ArcPyProjects\demTo\inputs"
-
-# Folder where you want all your results saved
 output_workspace = r"C:\ArcPyProjects\demTo\outputs"
-
-# Path to your boundary shapefile (The Cookie Cutter)
 in_clip_feature = r"C:\ArcPyProjects\demTo\inputs\Wake_Boundary.shp"
+output_crs = arcpy.SpatialReference(3359) # NAD 1983 StatePlane NC Meters
 
-# Output Coordinate System (WKID 3359 = NAD 1983 StatePlane NC Meters)
-output_crs = arcpy.SpatialReference(3359)
+# Threshold for Map Algebra (Meters)
+# Areas higher than this will be coded as 1, lower as 0.
+elevation_threshold = 120 
 # =========================================================================
 
 # Environment Settings
@@ -54,21 +51,34 @@ try:
 
     # 4. PRECISION CLIPPING (The Shape-Based Cut)
     print("Step 4: Clipping to irregular polygon boundary...")
-    final_output = os.path.join(output_workspace, "Wake_DEM_Final_Clipped.tif")
+    final_dem = os.path.join(output_workspace, "Wake_DEM_Final_Clipped.tif")
     arcpy.management.Clip(
         in_raster=projected_raster, 
-        out_raster=final_output, 
+        out_raster=final_dem, 
         in_template_dataset=in_clip_feature,
         nodata_value="-9999",
         clipping_geometry="ClippingGeometry", 
         maintain_clipping_extent="NO_MAINTAIN_EXTENT" 
     )
 
-    arcpy.management.CalculateStatistics(final_output)
-    print(f"COMPLETE! Final file ready at: {final_output}")
+    # 5. MAP ALGEBRA ANALYSIS (Identify High Ground)
+    # Using the Raster() class from Lesson 1.6.3
+    print(f"Step 5: Identifying terrain above {elevation_threshold}m...")
+    
+    # This single line of math creates the analysis
+    high_ground_bool = Raster(final_dem) > elevation_threshold
+    
+    # Save the analysis result permanently to disk
+    analysis_output = os.path.join(output_workspace, "Wake_High_Ground_Analysis.tif")
+    high_ground_bool.save(analysis_output)
+
+    print(f"--- SUCCESS ---")
+    print(f"Final DEM: {final_dem}")
+    print(f"Analysis Result: {analysis_output}")
 
 except Exception as e:
     print(f"Automation failed: {e}")
 
 finally:
+    # Always check the license back in
     arcpy.CheckInExtension("Spatial")
