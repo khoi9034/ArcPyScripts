@@ -2,15 +2,12 @@ import arcpy
 import os 
 arcpy.env.overwriteOutput = True
 
-#setting up the paths and gdb
 inputTract= r"C:\ArcPyProjects\DiversityIndex\inputs\dm10\NCTracts2010.shp"
 output_folder = r"C:\ArcPyProjects\DiversityIndex\outputs"
 gdb_name = "DiversityIndex.gdb"
 outgdb = os.path.join(output_folder,gdb_name)
 chosenCounty = "Orange"
 outPath= os.path.join(outgdb, f"{chosenCounty}_DI_2010")
-
-#here i am galncing at the fields in the input data to see what i need and what I have
 
 fieldsNameTract = [f.name for f in arcpy.ListFields(inputTract)]
 print(f"Fields in the input data: {fieldsNameTract}") 
@@ -19,8 +16,6 @@ if not arcpy.Exists(outgdb):
 else:
     print(f"GDB already exist:{outgdb}")
 
-#Here i am creating a fms to only keep the fields i need for when i do conversion export feature i can filter out the unneeded fields
-
 if not arcpy.Exists(outPath):
     FieldsToKeep = ['POP2010','WHITE', 'BLACK', 'AMERI_ES', 'ASIAN', 'HAWN_PI', 'HISPANIC', 'OTHER','CNTY_FIPS' ]
     fms = arcpy.FieldMappings() # creating container for all the collumns 
@@ -28,10 +23,10 @@ if not arcpy.Exists(outPath):
 
     for field in fms.fields: #this is the first safty net creates a static list of the table so doesent shift wheen we delete fields
         if field.name not in FieldsToKeep and not field.required:
-            fms.removeFieldMap(fms.findFieldMapIndex(field.name)) #the second safty net is here. THis makes it a live list to even when things move aorund as it is being deletd this will accurately find the index of the field.name
+            fms.removeFieldMap(fms.findFieldMapIndex(field.name))
 
 
-    arcpy.conversion.ExportFeatures( #exporting it to make a new feature class with only the fields i want
+    arcpy.conversion.ExportFeatures(
 
         in_features=inputTract,
         out_features=outPath,
@@ -45,7 +40,7 @@ else:
 listFields_outPathCleaned = [f.name for f in arcpy.ListFields(outPath)]
 print(f"Fields in outPath before adding new fields: {listFields_outPathCleaned}")
 
-newfields = ["div_index","per_Nhisp"]  #fields i need to add for the diversity index calculation
+newfields = ["div_index","per_Nhisp"]  
 
 for nf in newfields:
     if nf not in listFields_outPathCleaned:
@@ -77,7 +72,7 @@ for key, val in field_map.items():
         print(f"Key and value pairs found: {key} -> {val}")
 
 
-#this is the order of the fields in the curso and I need this because it is the blueprint for the diversity index formular. I need it to be in correct order
+
 cursorfields = [
     field_map["pop"],        #0
     field_map["white"],      #1
@@ -93,7 +88,7 @@ cursorfields = [
 ]
 
 
-with arcpy.da.UpdateCursor(outPath, cursorfields) as cursor: #creating the main math engine that will calculate Diversity Index
+with arcpy.da.UpdateCursor(outPath, cursorfields) as cursor:
     for row in cursor:
         pop = row[0] if row[0] and row[0]>0 else 0
         if pop > 0:
@@ -129,7 +124,8 @@ with arcpy.da.UpdateCursor(outPath, cursorfields) as cursor: #creating the main 
 #         cursor.updateRow(row)
 
 
-with arcpy.da.UpdateCursor(outPath, ["div_index"]) as cursor:#this is to fix any outliers.
+with arcpy.da.UpdateCursor(outPath, ["div_index"]) as cursor:
+    for row in cursor:
         if row[0] >= .9999:
             row[0]= 0
             cursor.updateRow(row)
