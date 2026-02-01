@@ -1,0 +1,1 @@
+#this is script to automate reading in csv files, validate fields, output clean tables and log errors like. print and log.
